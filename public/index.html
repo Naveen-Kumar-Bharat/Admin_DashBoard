@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management</title>
+    <style>
+      table {
+        font-family: sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th,
+      td {
+        padding: 8px;
+        border: 1px solid #ddd;
+      }
+
+      th {
+        background-color: #f1f1f1;
+        text-align: left;
+      }
+
+      .selected {
+        background-color: #f5deb3;
+      }
+
+
+      .search-bar {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .search-field {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .search-icon {
+        margin-left: 8px;
+        cursor: pointer;
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 16px;
+      }
+
+      .page-button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        background-color: #f1f1f1;
+        cursor: pointer;
+      }
+
+      .page-button:hover {
+        background-color: #e5e5e5;
+      }
+
+      .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 16px;
+      }
+
+      .action-button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        background-color: #f1f1f1;
+        cursor: pointer;
+      }
+
+      .action-button:hover {
+        background-color: #e5e5e5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>User Management</h1>
+    <div class="search-bar">
+      <input type="text" class="search-field" placeholder="Search users..." />
+      <button class="search-icon">🔍</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" /></th>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="user-table"></tbody>
+    </table>
+    <div class="pagination">
+      <button class="page-button first-page">« First</button>
+      <button class="page-button previous-page">‹ Previous</button>
+      <span
+        >Page <span id="current-page"></span> of <span id="total-pages"></span
+      ></span>
+      <button class="page-button next-page">Next ›</button>
+      <button class="page-button last-page">Last »</button>
+    </div>
+    <div class="action-buttons">
+      <button class="action-button edit">Edit</button>
+      <button class="action-button delete">Delete Selected</button>
+    </div>
+
+    <script>
+      const  getUsers = async () => {
+        const response = await fetch('https://geektrust.s3-ap-southeast-1.amazonaws.com/adminui-problem/members.json');
+        const users = await response.json();
+        // const filteredUsers = users.filter((user) => {
+        // // Implement search filtering here
+        // });
+        // return filteredUsers;
+        return users;
+        
+      }
+
+      let currentPage = 1;
+      let pageSize = 10;
+      let totalPages = 0;
+      function renderUsers() {
+        getUsers().then(filteredUsers => {
+            console.log(filteredUsers);
+            totalPages = Math.ceil(filteredUsers.length / pageSize);
+    
+            document.getElementById("total-pages").textContent = currentPage;
+    
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+    
+            const displayedUsers = filteredUsers.slice(startIndex, endIndex);
+
+            let tableBody = "";
+            displayedUsers.forEach((user, index) => {
+              tableBody += `<tr>
+                        <td>
+                            <input type="checkbox" data-user-index="<span class="math-inline">
+                        </td\>
+                        <td\>
+                            </span>${user.id}
+                        </td>
+                        <td>
+                            <span class="math-inline">${user.name}
+                        </td\>
+                        <td\>
+                            </span>${user.email}
+                        </td>
+                        <td>
+                            <button class="action-button edit" data-user-index="<span class="math-inline">Edit</button>
+                            <button class="action-button delete" data-user-index="<span class="math-inline">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+    
+            document.getElementById("user-table").innerHTML = tableBody;
+          });
+          
+        }
+
+
+
+      function renderPagination() {
+        document.getElementById("current-page").textContent = currentPage;
+      }
+
+      function render() {
+        renderUsers();
+        renderPagination();
+      }
+
+      render();
+
+      document.querySelectorAll(".page-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          // Implement pagination here
+              switch (button.textContent) {
+                case "« First":
+                  currentPage = 1;
+                  break;
+                case "‹ Previous":
+                  if (currentPage > 1) {
+                    currentPage--;
+                  }
+                  break;
+                case "Next ›":
+                  if (currentPage < totalPages) {
+                    currentPage++;
+                  }
+                  break;
+                case "Last »":
+                  currentPage = totalPages;
+                  break;
+              }
+            render();
+        });
+      });
+
+      // Add event listeners to edit and delete buttons
+      document.querySelectorAll(".action-button.edit").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    const rowIndex = parseInt(event.target.closest("tr").dataset.rowIndex);
+    const user = users[rowIndex];
+    const row = event.target.closest("tr");
+    const idInput = row.querySelector("input[type='checkbox']");
+    const nameInput = row.querySelector("td:nth-child(2) span");
+    const emailInput = row.querySelector("td:nth-child(3) span");
+
+    idInput.disabled = true;
+    nameInput.contentEditable = true;
+    emailInput.contentEditable = true;
+
+    const saveButton = document.createElement("button");
+    saveButton.textContent = "Save";
+
+    saveButton.addEventListener("click", () => {
+      user.name = nameInput.textContent;
+      user.email = emailInput.textContent;
+
+      renderUsers();
+
+      saveButton.remove();
+      idInput.disabled = false;
+      nameInput.contentEditable = false;
+      emailInput.contentEditable = false;
+    });
+
+    row.querySelector("td:nth-child(5)").appendChild(saveButton);
+  });
+});
+       document.querySelector(".action-button.delete").addEventListener("click", (event) => {
+  // Handle delete action
+  const selectedRows = document.querySelectorAll(".selected");
+
+  selectedRows.forEach((row) => {
+    const rowIndex = parseInt(row.dataset.rowIndex);
+    const user = users[rowIndex];
+    
+    // Remove the user from the users array
+    users.splice(rowIndex, 1);
+
+    // Re-render the users table
+    renderUsers();
+  });
+});
+
+
+        document.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
+  checkbox.addEventListener("click", (event) => {
+    const row = event.target.closest("tr");
+    if (checkbox.checked) {
+      row.classList.add("selected");
+    } else {
+      row.classList.remove("selected");
+    }
+  });
+});
+
+
+
+
+      document.querySelector(".search-icon").addEventListener("click", () => {
+        // Implement search here
+      });
+
+
+    </script>
+  </body>
+</html>
